@@ -1,7 +1,6 @@
 package client
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/ethereum/go-ethereum/common"
@@ -178,11 +177,6 @@ func (c *Client) SendTransaction(tx *EvmTransaction) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	marshal, _ := json.Marshal(tx)
-	fmt.Println(marshal)
-	if err != nil {
-		return nil, err
-	}
 	if resp.Error != nil {
 		return nil, resp.Error
 	}
@@ -202,7 +196,7 @@ func (c *Client) GasPrice(fullShardId uint32, tokenId uint64) (*big.Int, error) 
 }
 
 func (c *Client) GetAccountData(qkcaddr *QkcAddress, number *big.Int, includeShards bool) (map[string]interface{}, error) {
-	resp, err := c.client.Call("getAccountData", qkcaddr.ToHex(), toBlockNumArg(number), includeShards)
+	resp, err := c.client.Call("getAccountData", qkcaddr.ToHex(), nil, includeShards)
 	if err != nil {
 		return nil, err
 	}
@@ -278,4 +272,21 @@ func (c *Client) CreateTransaction(qkcFromAddr, qkcToAddr *QkcAddress, amount *b
 	tx = NewEvmTransaction(nonce, &qkcToAddr.Recipient, amount, gasLimit, gasPrice, qkcFromAddr.FullShardKey, qkcToAddr.FullShardKey, TokenIDEncode("QKC"),
 		TokenIDEncode("QKC"), networkId, 0, nil)
 	return tx, nil
+}
+
+func (c *Client) GetFullShardIds() ([]uint32, error) {
+	resp, err := c.client.Call("getFullShardIds")
+	if err != nil {
+		return []uint32{}, err
+	}
+	data := resp.Result.([]interface{})
+	res := make([]uint32, 0, len(data))
+	for _, id := range data {
+		fullShardId, err := hexutil.DecodeUint64(id.(string))
+		if err != nil {
+			return nil, err
+		}
+		res = append(res, uint32(fullShardId))
+	}
+	return res, nil
 }
