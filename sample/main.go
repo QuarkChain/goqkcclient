@@ -16,7 +16,7 @@ var (
 var(
 	ids=[]int{1,65537,131073,196609,262145,327681,393217,458753}
 	heights=[]int{4261560,4228787,4225299,4249469,4260585,4231027,4272980,4190999}
-	dist=6*60
+	dist=6*60*24*10
 	wg sync.WaitGroup
 )
 
@@ -40,14 +40,11 @@ func handle(id int,height int)  {
 				all++
 			}
 		}
-		if h%1000==0{
+		if h%10000==0{
 			fmt.Println("handle h",h,height-dist)
 		}
-		if h==height-dist/2{
-			//fmt.Println("currHeight",h,"from",heights[index],"to",heights[index]-dist,"tx nums",all,"from addr nums",len(ff),"to addr nums",len(tt))
-		}
 	}
-	fmt.Println("all data","from",height,"to",height-dist,"tx nums",all,"from addr nums",len(ff),"to addr nums",len(tt))
+	fmt.Println("fullShardID",id,"all data","from",height,"to",height-dist,"tx nums",all,"from addr nums",len(ff),"to addr nums",len(tt))
 wg.Done()
 }
 func main() {
@@ -60,7 +57,6 @@ func main() {
 	go	handle(ids[5],heights[5])
 	go	handle(ids[6],heights[6])
 	go	handle(ids[7],heights[7])
-	fmt.Println("SSSSSSSSS")
 	wg.Wait()
 	fmt.Println("EEEEEEEEEEE")
 }
