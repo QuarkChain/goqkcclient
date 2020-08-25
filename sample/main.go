@@ -15,13 +15,13 @@ var (
 var(
 	ids=[]int{1,65537,131073,196609,262145,327681,393217,458753}
 	heights=[]int{4261560,4228787,4225299,4249469,4260585,4231027,4272980,4190999}
-	dist=51
+	dist=518400
 )
 func main() {
 	for index:=0;index<len(ids);index++{
 		id:=ids[index]
 
-		fmt.Println("fullshardid",id,"from",heights[index],"to",heights[index]-dist)
+		fmt.Println("============fullshardid",id,"from",heights[index],"to",heights[index]-dist)
 
 		ff:=make(map[string]bool)
 		tt:=make(map[string]bool)
