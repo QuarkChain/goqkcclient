@@ -25,10 +25,9 @@ func main() {
 		fmt.Println("fullshardid",id,"from",heights[index],"to",heights[index]-518400)
 
 		ff:=make(map[string]bool)
-		tt:=make(map[string]bool)
 		all:=0
 
-		for h:=heights[index];h>=heights[index]-518400;h--{
+		for h:=heights[index];h>=heights[index]-5184;h--{
 			ans,err:=client.GetMinorBlockByHeight(uint32(id),new(big.Int).SetUint64(uint64(h)))
 			fmt.Println("hhhh",h,err)
 			txs:=ans.Result.(map[string]interface{})["transactions"]
@@ -40,14 +39,17 @@ func main() {
 					from:=dd["from"].(string)
 					to:=dd["to"].(string)
 					ff[from]=true
-					tt[to]=true
+					ff[to]=true
 					all++
 					fmt.Println("from ",from,to)
 				}
 
 			}
 		}
-		fmt.Println("all tx",all,"from tx",len(ff),"to",len(tt))
+		fmt.Println("all tx",all)
+		for k,v:=range ff{
+			fmt.Println("addr",k)
+		}
 	}
 
 }
