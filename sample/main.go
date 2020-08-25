@@ -43,6 +43,7 @@ func main() {
 					fmt.Println("from ",from,to)
 				}
 			}
+			fmt.Println("hhhhhhhh",h,heights[index]-518)
 			if h%10000==0{
 				fmt.Println("handle h",h,heights[index]-518400)
 			}
