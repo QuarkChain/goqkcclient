@@ -9,7 +9,7 @@ import (
 )
 
 var (
-	client       = clt.NewClient("http://127.0.0.1:38391")
+	client       = clt.NewClient("http://34.222.230.172:38391")
 	fullShardKey = uint32(0)
 )
 
