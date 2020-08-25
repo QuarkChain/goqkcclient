@@ -26,7 +26,7 @@ func main() {
 			fmt.Println("hhhh",h,err)
 			txs:=ans.Result.(map[string]interface{})["transactions"]
 			fmt.Println("txsss",txs)
-			sv,ok:=txs.([]map[string]interface{})
+			sv,ok:=txs.([]interface{})
 			if ok{
 				fmt.Println("svvvv",len(sv),sv)
 			}
