@@ -44,7 +44,7 @@ func main() {
 				fmt.Println("handle h",h,heights[index]-dist)
 			}
 			if h==heights[index]-dist/2{
-				fmt.Println("currHeight",h,"from",heights[index],"to",heights[index]-dist,"tx nums",all,"from addr nums",len(ff),"to addr nums",len(tt))
+				//fmt.Println("currHeight",h,"from",heights[index],"to",heights[index]-dist,"tx nums",all,"from addr nums",len(ff),"to addr nums",len(tt))
 			}
 		}
 		fmt.Println("all data","from",heights[index],"to",heights[index]-dist,"tx nums",all,"from addr nums",len(ff),"to addr nums",len(tt))
