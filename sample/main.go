@@ -38,10 +38,10 @@ func main() {
 					ff[from]=true
 					tt[to]=true
 					all++
-					fmt.Println("from ",from,to)
+					//fmt.Println("from ",from,to)
 				}
 			}
-			fmt.Println("hhhhhhhh",h,heights[index]-dist)
+			//fmt.Println("hhhhhhhh",h,heights[index]-dist)
 			if h%1000==0{
 				fmt.Println("handle h",h,heights[index]-dist)
 			}
