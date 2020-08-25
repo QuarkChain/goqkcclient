@@ -21,19 +21,33 @@ var(
 func main() {
 	for index:=0;index<len(ids);index++{
 		id:=ids[index]
-		for h:=heights[index];h>=heights[index]-10000;h--{
+
+		fmt.Println("fullshardid",id,"from",heights[index],"to",heights[index]-518400)
+
+		ff:=make(map[string]bool)
+		tt:=make(map[string]bool)
+		all:=0
+
+		for h:=heights[index];h>=heights[index]-518400;h--{
 			ans,err:=client.GetMinorBlockByHeight(uint32(id),new(big.Int).SetUint64(uint64(h)))
 			fmt.Println("hhhh",h,err)
 			txs:=ans.Result.(map[string]interface{})["transactions"]
-			fmt.Println("txsss",txs)
+			//fmt.Println("txsss",txs)
 			sv,_:=txs.([]interface{})
 			if len(sv)!=0{
-				dd:=sv[0].(map[string]interface{})
-				fmt.Println("ddddd",dd["from"])
+				for index:=0;index<len(sv);index++{
+					dd:=sv[index].(map[string]interface{})
+					from:=dd["from"].(string)
+					to:=dd["to"].(string)
+					ff[from]=true
+					tt[to]=true
+					all++
+					fmt.Println("from ",from,to)
+				}
+
 			}
-
 		}
-
+		fmt.Println("all tx",all,"from tx",len(ff),"to",len(tt))
 	}
 
 }
