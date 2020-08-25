@@ -15,8 +15,8 @@ var (
 
 
 var(
-	ids=[]int{0}
-	heights=[]int{4261327}
+	ids=[]int{1,65537,131073,196609,262145,327681,393217,458753}
+	heights=[]int{4261560,4228787,4225299,4249469,4260585,4231027,4272980,4190999}
 )
 func main() {
 	for index:=0;index<len(ids);index++{
@@ -25,13 +25,12 @@ func main() {
 		fmt.Println("fullshardid",id,"from",heights[index],"to",heights[index]-518400)
 
 		ff:=make(map[string]bool)
+		tt:=make(map[string]bool)
 		all:=0
 
-		for h:=heights[index];h>=heights[index]-5184;h--{
+		for h:=heights[index];h>=heights[index]-518400;h--{
 			ans,_:=client.GetMinorBlockByHeight(uint32(id),new(big.Int).SetUint64(uint64(h)))
-			//fmt./Println("hhhh",h,err)
 			txs:=ans.Result.(map[string]interface{})["transactions"]
-			//fmt.Println("txsss",txs)
 			sv,_:=txs.([]interface{})
 			if len(sv)!=0{
 				for index:=0;index<len(sv);index++{
@@ -39,17 +38,16 @@ func main() {
 					from:=dd["from"].(string)
 					to:=dd["to"].(string)
 					ff[from]=true
-					ff[to]=true
+					tt[to]=true
 					all++
 					fmt.Println("from ",from,to)
 				}
-
+			}
+			if h%10000==0{
+				fmt.Println("handle h",h,heights[index]-518400)
 			}
 		}
-		fmt.Println("tx nums",all)
-		for k,_:=range ff{
-			fmt.Println("addr",k)
-		}
+		fmt.Println("tx nums",all,"from addr nums",len(ff),"to addr nums",len(tt))
 	}
 
 }
