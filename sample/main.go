@@ -16,12 +16,12 @@ var (
 var(
 	ids=[]int{1,65537,131073,196609,262145,327681,393217,458753}
 	heights=[]int{4261560,4228787,4225299,4249469,4260585,4231027,4272980,4190999}
-	dist=518400/600
+	dist=6*60
 	wg sync.WaitGroup
 )
 
 func handle(id int,height int)  {
-	//fmt.Println("============fullshardid",id,"from",height,"to",height-dist)
+	fmt.Println("============fullshardid",id,"from",height,"to",height-dist)
 
 	ff:=make(map[string]bool)
 	tt:=make(map[string]bool)
