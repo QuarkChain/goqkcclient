@@ -28,7 +28,7 @@ func main() {
 		tt:=make(map[string]bool)
 		all:=0
 
-		for h:=heights[index];h>=heights[index]-518400;h--{
+		for h:=heights[index];h>=heights[index]-518;h--{
 			ans,_:=client.GetMinorBlockByHeight(uint32(id),new(big.Int).SetUint64(uint64(h)))
 			txs:=ans.Result.(map[string]interface{})["transactions"]
 			sv,_:=txs.([]interface{})
