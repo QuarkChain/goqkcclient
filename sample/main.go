@@ -26,9 +26,10 @@ func main() {
 			fmt.Println("hhhh",h,err)
 			txs:=ans.Result.(map[string]interface{})["transactions"]
 			fmt.Println("txsss",txs)
-			sv,ok:=txs.([]interface{})
-			if ok{
-				fmt.Println("svvvv",len(sv),sv)
+			sv,_:=txs.([]interface{})
+			if len(sv)!=0{
+				dd:=sv[0].(map[string]interface{})
+				fmt.Println("ddddd",dd["from"])
 			}
 
 		}
