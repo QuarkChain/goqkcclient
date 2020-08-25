@@ -28,8 +28,8 @@ func main() {
 		all:=0
 
 		for h:=heights[index];h>=heights[index]-5184;h--{
-			ans,err:=client.GetMinorBlockByHeight(uint32(id),new(big.Int).SetUint64(uint64(h)))
-			fmt.Println("hhhh",h,err)
+			ans,_:=client.GetMinorBlockByHeight(uint32(id),new(big.Int).SetUint64(uint64(h)))
+			//fmt./Println("hhhh",h,err)
 			txs:=ans.Result.(map[string]interface{})["transactions"]
 			//fmt.Println("txsss",txs)
 			sv,_:=txs.([]interface{})
