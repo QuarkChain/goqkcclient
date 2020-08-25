@@ -46,8 +46,8 @@ func main() {
 
 			}
 		}
-		fmt.Println("all tx",all)
-		for k,v:=range ff{
+		fmt.Println("tx nums",all)
+		for k,_:=range ff{
 			fmt.Println("addr",k)
 		}
 	}
