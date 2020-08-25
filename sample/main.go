@@ -1,11 +1,9 @@
 package main
 
 import (
-	"encoding/binary"
 	"fmt"
 	clt "github.com/QuarkChain/goqkcclient/client"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/crypto"
 	"math/big"
 )
@@ -15,32 +13,22 @@ var (
 	fullShardKey = uint32(0)
 )
 
+
+var(
+	ids=[]int{0}
+	heights=[]int{4261327}
+)
 func main() {
-	address, _ := hexutil.Decode("0x33f99d65322731353c948808b2e9208d2b22f5520000888d")
-	prvkey, _ := crypto.ToECDSA(common.FromHex("0x8d298c57e269a379c4956583f095b2557c8f07226410e02ae852bc4563864790"))
+	for index:=0;index<len(ids);index++{
+		id:=ids[index]
+		for h:=heights[index];h>=heights[index]-2;h--{
+			ans,err:=client.GetMinorBlockByHeight(uint32(id),new(big.Int).SetUint64(uint64(h)))
+			fmt.Println("hhhh",h,ans,err)
+			txs:=ans.Result.(map[string]interface{})["transactions"]
+			fmt.Println("txsss",txs)
+		}
 
-	context := make(map[string]string)
-	// addr := account.NewAddress(common.BytesToAddress(address[:20]), binary.BigEndian.Uint32(address[20:]))
-	addr := clt.QkcAddress{Recipient: common.BytesToAddress(address[:20]), FullShardKey: binary.BigEndian.Uint32(address[20:])}
-	context["address"] = addr.Recipient.Hex()
-	context["fromFullShardKey"] = addr.FullShardKeyToHex()
-	getBalance(&addr)
-	_, qkcToAddr, err := clt.NewAddress(0)
-	if err != nil {
-		fmt.Println("NewAddress error: ", err.Error())
 	}
-
-	context["from"] = addr.Recipient.Hex()
-	context["to"] = qkcToAddr.Recipient.Hex()
-	context["amount"] = "0"
-	context["price"] = "100000000000"
-	context["toFullShardKey"] = qkcToAddr.FullShardKeyToHex()
-	context["privateKey"] = common.Bytes2Hex(prvkey.D.Bytes())
-
-	txid := sent(context)
-	context["txid"] = txid
-	getTransaction(context)
-	getReceipt(context)
 
 }
 
