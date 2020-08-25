@@ -15,7 +15,7 @@ var (
 var(
 	ids=[]int{1,65537,131073,196609,262145,327681,393217,458753}
 	heights=[]int{4261560,4228787,4225299,4249469,4260585,4231027,4272980,4190999}
-	dist=518
+	dist=51
 )
 func main() {
 	for index:=0;index<len(ids);index++{
@@ -38,18 +38,16 @@ func main() {
 					ff[from]=true
 					tt[to]=true
 					all++
-					//fmt.Println("from ",from,to)
 				}
 			}
-			//fmt.Println("hhhhhhhh",h,heights[index]-dist)
 			if h%1000==0{
 				fmt.Println("handle h",h,heights[index]-dist)
 			}
 			if h==heights[index]-dist/2{
-				fmt.Println("518400/2","tx nums",all,"from addr nums",len(ff),"to addr nums",len(tt))
+				fmt.Println("currHeight",h,"from",heights[index],"to",heights[index]-dist,"tx nums",all,"from addr nums",len(ff),"to addr nums",len(tt))
 			}
 		}
-		fmt.Println("518400","tx nums",all,"from addr nums",len(ff),"to addr nums",len(tt))
+		fmt.Println("all data","from",heights[index],"to",heights[index]-dist,"tx nums",all,"from addr nums",len(ff),"to addr nums",len(tt))
 	}
 
 }
