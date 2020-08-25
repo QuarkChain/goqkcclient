@@ -21,9 +21,9 @@ var(
 func main() {
 	for index:=0;index<len(ids);index++{
 		id:=ids[index]
-		for h:=heights[index];h>=heights[index]-2;h--{
+		for h:=heights[index];h>=heights[index]-10000;h--{
 			ans,err:=client.GetMinorBlockByHeight(uint32(id),new(big.Int).SetUint64(uint64(h)))
-			fmt.Println("hhhh",h,ans,err)
+			fmt.Println("hhhh",h,err)
 			txs:=ans.Result.(map[string]interface{})["transactions"]
 			fmt.Println("txsss",txs)
 		}
