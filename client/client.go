@@ -66,7 +66,7 @@ func toBlockNumArg(number *big.Int) string {
 }
 
 func (c *Client) GetMinorBlockByHeight(fullShardId uint32, number *big.Int) (result *jsonrpc.RPCResponse, err error) {
-	resp, err := c.client.Call("getMinorBlockByHeight", hexutil.EncodeUint64(uint64(fullShardId)), toBlockNumArg(number), true)
+	resp, err := c.client.Call("getMinorBlockByHeight", hexutil.EncodeUint64(uint64(fullShardId)), toBlockNumArg(number), false)
 	if err != nil {
 		return nil, err
 	}
@@ -260,17 +260,21 @@ func (c *Client) NetworkID() (uint32, error) {
 	return uint32(networkId), nil
 }
 
-func (c *Client) CreateTransaction(qkcFromAddr, qkcToAddr *QkcAddress, amount *big.Int, gasLimit uint64, gasPrice *big.Int) (tx *EvmTransaction, err error) {
-	nonce, err := c.GetNonce(qkcFromAddr)
-	if err != nil {
-		return nil, err
-	}
+func (c *Client) CreateTransaction(nonce uint64,fromFullShardKey uint32, qkcToAddr *QkcAddress, amount *big.Int, gasLimit uint64, gasPrice *big.Int,data []byte) (tx *EvmTransaction, err error) {
 	networkId, err := c.NetworkID()
 	if err != nil {
 		return nil, err
 	}
-	tx = NewEvmTransaction(nonce, &qkcToAddr.Recipient, amount, gasLimit, gasPrice, qkcFromAddr.FullShardKey, qkcToAddr.FullShardKey, TokenIDEncode("QKC"),
-		TokenIDEncode("QKC"), networkId, 0, nil)
+
+	to:=new(common.Address)
+	if qkcToAddr==nil{
+		to=nil
+	}else{
+		to=&qkcToAddr.Recipient
+	}
+
+	tx = NewEvmTransaction(nonce, to, amount, gasLimit, gasPrice,fromFullShardKey, fromFullShardKey, TokenIDEncode("QKC"),
+		TokenIDEncode("QKC"), networkId, 0, data)
 	return tx, nil
 }
 
