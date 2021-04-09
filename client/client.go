@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ybbus/jsonrpc"
 	"math/big"
@@ -66,7 +67,7 @@ func toBlockNumArg(number *big.Int) string {
 }
 
 func (c *Client) GetMinorBlockByHeight(fullShardId uint32, number *big.Int) (result *jsonrpc.RPCResponse, err error) {
-	resp, err := c.client.Call("getMinorBlockByHeight", hexutil.EncodeUint64(uint64(fullShardId)), toBlockNumArg(number), false)
+	resp, err := c.client.Call("getMinorBlockByHeight", hexutil.EncodeUint64(uint64(fullShardId)), number, false)
 	if err != nil {
 		return nil, err
 	}
@@ -195,6 +196,40 @@ func (c *Client) GasPrice(fullShardId uint32, tokenId uint64) (*big.Int, error) 
 	return price, nil
 }
 
+
+func toFilterArg(q ethereum.FilterQuery) (interface{}, error) {
+	arg := map[string]interface{}{
+		"address":q.Addresses,
+		"topics":  q.Topics,
+	}
+	if q.BlockHash != nil {
+		arg["blockHash"] = *q.BlockHash
+		if q.FromBlock != nil || q.ToBlock != nil {
+			return nil, fmt.Errorf("cannot specify both BlockHash and FromBlock/ToBlock")
+		}
+	} else {
+		if q.FromBlock == nil {
+			arg["fromBlock"] = "0x0"
+		} else {
+			arg["fromBlock"] = toBlockNumArg(q.FromBlock)
+		}
+		arg["toBlock"] = toBlockNumArg(q.ToBlock)
+	}
+	return arg, nil
+}
+
+func (c *Client)GetLog(fullShardId uint32,query ethereum.FilterQuery)( *jsonrpc.RPCResponse,error)  {
+	arg, err := toFilterArg(query)
+	if err != nil {
+		return nil, err
+	}
+	//fmt.Println("ERRRR",arg,hexutil.EncodeUint64(uint64(fullShardId)))
+	result,err := c.client.Call( "eth_getLogs", arg,hexutil.EncodeUint64(uint64(fullShardId)))
+	//fmt.Println("err",result)
+	return result, err
+}
+
+
 func (c *Client) GetAccountData(qkcaddr *QkcAddress, number *big.Int, includeShards bool) (map[string]interface{}, error) {
 	resp, err := c.client.Call("getAccountData", qkcaddr.ToHex(), nil, includeShards)
 	if err != nil {
@@ -260,12 +295,7 @@ func (c *Client) NetworkID() (uint32, error) {
 	return uint32(networkId), nil
 }
 
-func (c *Client) CreateTransaction(nonce uint64,fromFullShardKey uint32, qkcToAddr *QkcAddress, amount *big.Int, gasLimit uint64, gasPrice *big.Int,data []byte) (tx *EvmTransaction, err error) {
-	networkId, err := c.NetworkID()
-	if err != nil {
-		return nil, err
-	}
-
+func (c *Client) CreateTransaction(networkID uint32,nonce uint64,fromFullShardKey uint32, qkcToAddr *QkcAddress, amount *big.Int, gasLimit uint64, gasPrice *big.Int,tokenID uint64,data []byte) (tx *EvmTransaction) {
 	to:=new(common.Address)
 	if qkcToAddr==nil{
 		to=nil
@@ -273,9 +303,9 @@ func (c *Client) CreateTransaction(nonce uint64,fromFullShardKey uint32, qkcToAd
 		to=&qkcToAddr.Recipient
 	}
 
-	tx = NewEvmTransaction(nonce, to, amount, gasLimit, gasPrice,fromFullShardKey, fromFullShardKey, TokenIDEncode("QKC"),
-		TokenIDEncode("QKC"), networkId, 0, data)
-	return tx, nil
+	tx = NewEvmTransaction(nonce, to, amount, gasLimit, gasPrice,fromFullShardKey, fromFullShardKey,
+		TokenIDEncode("QKC"), tokenID,networkID, 0, data)
+	return tx
 }
 
 func (c *Client) GetFullShardIds() ([]uint32, error) {
