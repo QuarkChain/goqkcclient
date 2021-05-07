@@ -3,9 +3,9 @@ package client
 import (
 	"errors"
 	"fmt"
+	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ybbus/jsonrpc"
 	"math/big"
@@ -35,26 +35,26 @@ type CallMsg struct {
 
 func toCallArg(msg *CallMsg) interface{} {
 	arg := map[string]interface{}{
-		"from": msg.From,
-		"to":   msg.To,
+		"from": msg.From.ToHex(),
+		"to":   msg.To.ToHex(),
 	}
 	if len(msg.Data) > 0 {
-		arg["data"] = hexutil.Bytes(msg.Data)
+		arg["data"] = hexutil.Encode(msg.Data)
 	}
 	if msg.Value != nil {
-		arg["value"] = (*hexutil.Big)(msg.Value)
+		arg["value"] = hexutil.EncodeBig(msg.Value)
 	}
 	if msg.Gas != 0 {
-		arg["gas"] = hexutil.Uint64(msg.Gas)
+		arg["gas"] = hexutil.EncodeUint64(msg.Gas)
 	}
 	if msg.GasPrice != nil {
-		arg["gasPrice"] = (*hexutil.Big)(msg.GasPrice)
+		arg["gasPrice"] =hexutil.EncodeBig(msg.GasPrice)
 	}
 	if msg.GasTokenId != 0 {
-		arg["gasTokenId"] = hexutil.Uint64(msg.GasTokenId)
+		arg["gasTokenId"] =hexutil.EncodeUint64(msg.GasTokenId)
 	}
 	if msg.TransferTokenId != 0 {
-		arg["transferTokenId"] = hexutil.Uint64(msg.TransferTokenId)
+		arg["transferTokenId"] =hexutil.EncodeUint64(msg.TransferTokenId)
 	}
 	return arg
 }
@@ -264,15 +264,15 @@ func (c *Client) networkInfo() (result *jsonrpc.RPCResponse, err error) {
 	return resp, nil
 }
 
-func (c *Client) EstimateGas(params *CallMsg) (gas uint64, err error) {
-	resp, err := c.client.Call("", toCallArg(params))
+func (c *Client) Call(params *CallMsg) (data []byte, err error) {
+	resp, err := c.client.Call("call", toCallArg(params),nil)
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
 	if resp.Error != nil {
-		return 0, resp.Error
+		return nil, resp.Error
 	}
-	return hexutil.DecodeUint64(resp.Result.(map[string]interface{})["result"].(string))
+	return hexutil.Decode(resp.Result.(string))
 }
 
 func (c *Client) GetNonce(qkcAddr *QkcAddress) (nonce uint64, err error) {
