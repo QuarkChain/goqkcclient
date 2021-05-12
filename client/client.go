@@ -67,7 +67,14 @@ func toBlockNumArg(number *big.Int) string {
 }
 
 func (c *Client) GetMinorBlockByHeight(fullShardId uint32, number *big.Int) (result *jsonrpc.RPCResponse, err error) {
-	resp, err := c.client.Call("getMinorBlockByHeight", hexutil.EncodeUint64(uint64(fullShardId)), number, false)
+	nn:=new(string)
+	if number==nil{
+		nn=nil
+	}else{
+		tt:=hexutil.EncodeUint64(number.Uint64())
+		nn=&tt
+	}
+	resp, err := c.client.Call("getMinorBlockByHeight", hexutil.EncodeUint64(uint64(fullShardId)), nn, false)
 	if err != nil {
 		return nil, err
 	}
@@ -134,7 +141,7 @@ func (c *Client) GetTransactionReceipt(transactionId *TransactionId) (result *js
 	return resp, nil
 }
 
-func (c *Client) GetBalance(qkcAddr *QkcAddress) (balance *big.Int, err error) {
+func (c *Client) GetBalance(qkcAddr *QkcAddress,token string) (balance *big.Int, err error) {
 	resp, err := c.client.Call("getBalances", []string{qkcAddr.ToHex()})
 	if err != nil {
 		return
@@ -146,8 +153,7 @@ func (c *Client) GetBalance(qkcAddr *QkcAddress) (balance *big.Int, err error) {
 	balances := resp.Result.(map[string]interface{})["balances"]
 	for _, m := range balances.([]interface{}) {
 		bInfo := m.(map[string]interface{})
-		token := (bInfo["tokenStr"]).(string)
-		if strings.ToLower(token) == "qkc" {
+		if strings.ToLower((bInfo["tokenStr"]).(string)) == token {
 			return hexutil.DecodeBig(bInfo["balance"].(string))
 		}
 	}
