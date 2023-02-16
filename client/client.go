@@ -3,22 +3,23 @@ package client
 import (
 	"errors"
 	"fmt"
+	"math/big"
+	"strings"
+
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ybbus/jsonrpc"
-	"math/big"
-	"strings"
 )
 
 type Client struct {
-	client jsonrpc.RPCClient
+	client *jsonrpc.RPCClient
 }
 
 // NewClient creates a client that uses the given RPC client.
 func NewClient(host string) *Client {
-	client := jsonrpc.NewClient(host)
+	client := jsonrpc.NewRPCClient(host)
 	return &Client{client: client}
 }
 
@@ -48,13 +49,13 @@ func toCallArg(msg *CallMsg) interface{} {
 		arg["gas"] = hexutil.EncodeUint64(msg.Gas)
 	}
 	if msg.GasPrice != nil {
-		arg["gasPrice"] =hexutil.EncodeBig(msg.GasPrice)
+		arg["gasPrice"] = hexutil.EncodeBig(msg.GasPrice)
 	}
 	if msg.GasTokenId != 0 {
-		arg["gasTokenId"] =hexutil.EncodeUint64(msg.GasTokenId)
+		arg["gasTokenId"] = hexutil.EncodeUint64(msg.GasTokenId)
 	}
 	if msg.TransferTokenId != 0 {
-		arg["transferTokenId"] =hexutil.EncodeUint64(msg.TransferTokenId)
+		arg["transferTokenId"] = hexutil.EncodeUint64(msg.TransferTokenId)
 	}
 	return arg
 }
@@ -67,12 +68,12 @@ func toBlockNumArg(number *big.Int) string {
 }
 
 func (c *Client) GetMinorBlockByHeight(fullShardId uint32, number *big.Int) (result *jsonrpc.RPCResponse, err error) {
-	nn:=new(string)
-	if number==nil{
-		nn=nil
-	}else{
-		tt:=hexutil.EncodeUint64(number.Uint64())
-		nn=&tt
+	nn := new(string)
+	if number == nil {
+		nn = nil
+	} else {
+		tt := hexutil.EncodeUint64(number.Uint64())
+		nn = &tt
 	}
 	resp, err := c.client.Call("getMinorBlockByHeight", hexutil.EncodeUint64(uint64(fullShardId)), nn, false)
 	if err != nil {
@@ -119,6 +120,23 @@ func (c *Client) GetRootBlockByHeight(number *big.Int) (result *jsonrpc.RPCRespo
 	return resp, nil
 }
 
+func (c *Client) GetTransactionConfirmedByNumberRootBlocks(txid *TransactionId) (uint64, error) {
+	fmt.Println(txid.Hex())
+	resp, err := c.client.Call("getTransactionConfirmedByNumberRootBlocks", txid.Hex())
+	if err != nil {
+		return 0, err
+	}
+	if resp.Error != nil {
+		return 0, resp.Error
+	}
+	countStr, ok := resp.Result.(string)
+	if !ok {
+		return 0, errors.New("getTransactionConfirmedByNumberRootBlocks fail")
+	}
+	count, err := hexutil.DecodeUint64(countStr)
+	return count, err
+}
+
 func (c *Client) GetTransactionById(txid *TransactionId) (result *jsonrpc.RPCResponse, err error) {
 	resp, err := c.client.Call("getTransactionById", []string{txid.Hex()})
 	if err != nil {
@@ -141,7 +159,7 @@ func (c *Client) GetTransactionReceipt(transactionId *TransactionId) (result *js
 	return resp, nil
 }
 
-func (c *Client) GetBalance(qkcAddr *QkcAddress,token string) (balance *big.Int, err error) {
+func (c *Client) GetBalance(qkcAddr *QkcAddress, token string) (balance *big.Int, err error) {
 	resp, err := c.client.Call("getBalances", []string{qkcAddr.ToHex()})
 	if err != nil {
 		return
@@ -180,7 +198,7 @@ func (c *Client) SendTransaction(tx *EvmTransaction) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	resp, err := c.client.Call("sendRawTransaction", common.ToHex(data))
+	resp, err := c.client.Call("sendRawTransaction", common.Bytes2Hex(data))
 	if err != nil {
 		return nil, err
 	}
@@ -202,10 +220,9 @@ func (c *Client) GasPrice(fullShardId uint32, tokenId uint64) (*big.Int, error) 
 	return price, nil
 }
 
-
 func toFilterArg(q ethereum.FilterQuery) (interface{}, error) {
 	arg := map[string]interface{}{
-		"address":q.Addresses,
+		"address": q.Addresses,
 		"topics":  q.Topics,
 	}
 	if q.BlockHash != nil {
@@ -224,17 +241,16 @@ func toFilterArg(q ethereum.FilterQuery) (interface{}, error) {
 	return arg, nil
 }
 
-func (c *Client)GetLog(fullShardId uint32,query ethereum.FilterQuery)( *jsonrpc.RPCResponse,error)  {
+func (c *Client) GetLog(fullShardId uint32, query ethereum.FilterQuery) (*jsonrpc.RPCResponse, error) {
 	arg, err := toFilterArg(query)
 	if err != nil {
 		return nil, err
 	}
 	//fmt.Println("ERRRR",arg,hexutil.EncodeUint64(uint64(fullShardId)))
-	result,err := c.client.Call( "eth_getLogs", arg,hexutil.EncodeUint64(uint64(fullShardId)))
+	result, err := c.client.Call("eth_getLogs", arg, hexutil.EncodeUint64(uint64(fullShardId)))
 	//fmt.Println("err",result)
 	return result, err
 }
-
 
 func (c *Client) GetAccountData(qkcaddr *QkcAddress, number *big.Int, includeShards bool) (map[string]interface{}, error) {
 	resp, err := c.client.Call("getAccountData", qkcaddr.ToHex(), nil, includeShards)
@@ -271,7 +287,7 @@ func (c *Client) networkInfo() (result *jsonrpc.RPCResponse, err error) {
 }
 
 func (c *Client) Call(params *CallMsg) (data []byte, err error) {
-	resp, err := c.client.Call("call", toCallArg(params),nil)
+	resp, err := c.client.Call("call", toCallArg(params), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -301,16 +317,17 @@ func (c *Client) NetworkID() (uint32, error) {
 	return uint32(networkId), nil
 }
 
-func (c *Client) CreateTransaction(networkID uint32,nonce uint64,fromFullShardKey uint32, qkcToAddr *QkcAddress, amount *big.Int, gasLimit uint64, gasPrice *big.Int,tokenID uint64,data []byte) (tx *EvmTransaction) {
-	to:=new(common.Address)
-	if qkcToAddr==nil{
-		to=nil
-	}else{
-		to=&qkcToAddr.Recipient
+func (c *Client) CreateTransaction(networkID uint32, nonce uint64, fromFullShardKey uint32, qkcToAddr *QkcAddress,
+	amount *big.Int, gasLimit uint64, gasPrice *big.Int, tokenID uint64, data []byte) (tx *EvmTransaction) {
+	to := new(common.Address)
+	if qkcToAddr == nil {
+		to = nil
+	} else {
+		to = &qkcToAddr.Recipient
 	}
 
-	tx = NewEvmTransaction(nonce, to, amount, gasLimit, gasPrice,fromFullShardKey, fromFullShardKey,
-		TokenIDEncode("QKC"), tokenID,networkID, 0, data)
+	tx = NewEvmTransaction(nonce, to, amount, gasLimit, gasPrice, fromFullShardKey, fromFullShardKey,
+		TokenIDEncode("QKC"), tokenID, networkID, 0, data)
 	return tx
 }
 
