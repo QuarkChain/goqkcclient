@@ -14,9 +14,8 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/crypto/sha3"
 	"github.com/ethereum/go-ethereum/rlp"
-
-	"golang.org/x/crypto/sha3"
 )
 
 const (
@@ -301,7 +300,7 @@ func (tx *EvmTransaction) RawSignatureValues() (*big.Int, *big.Int, *big.Int) {
 }
 
 func rlpHash(x interface{}) (h common.Hash) {
-	hw := sha3.NewLegacyKeccak256()
+	hw := sha3.NewKeccak256()
 	rlp.Encode(hw, x)
 	hw.Sum(h[:0])
 	return h
@@ -319,7 +318,7 @@ func (tx *Transaction) getNonce() uint64 {
 		return tx.EvmTx.data.AccountNonce
 	}
 
-	//todo verify the default value when have more type of tx
+	// todo verify the default value when have more type of tx
 	return 0
 }
 
@@ -328,7 +327,7 @@ func (tx *Transaction) getPrice() *big.Int {
 		return tx.EvmTx.data.Price
 	}
 
-	//todo verify the default value when have more type of tx
+	// todo verify the default value when have more type of tx
 	return big.NewInt(0)
 }
 
@@ -356,7 +355,7 @@ func (tx *Transaction) Hash() (h common.Hash) {
 	binary.BigEndian.PutUint32(w[1:], uint32(len(bytes)))
 	w = append(w, bytes...)
 
-	hw := sha3.NewLegacyKeccak256()
+	hw := sha3.NewKeccak256()
 	hw.Write(w)
 	hw.Sum(h[:0])
 	tx.hash.Store(h)

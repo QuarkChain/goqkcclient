@@ -1,61 +1,61 @@
 package main
 
 import (
+	"encoding/binary"
 	"fmt"
 	"math/big"
+	"time"
 
 	clt "github.com/QuarkChain/goqkcclient/client"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/rlp"
 )
 
 var (
-	client       = clt.NewClient("http://jrpc.mainnet.quarkchain.io:38391")
+	client       = clt.NewClient("http://jrpc.devnet.quarkchain.io:38391")
 	fullShardKey = uint32(0)
 )
 
 func main() {
-	/*tid := clt.TransactionId{common.HexToHash("0x0a7f2f2af017238a0f9cac1bdbab53a4cd24fa779f706925e10ad63927f987c3"), 0}
-	count, err := client.GetTransactionConfirmedByNumberRootBlocks(&tid)
+	address, _ := hexutil.Decode("0x33f99d65322731353c948808b2e9208d2b22f5520000888d")
+	prvkey, _ := crypto.ToECDSA(common.FromHex("0x8d298c57e269a379c4956583f095b2557c8f07226410e02ae852bc4563864790"))
+
+	context := make(map[string]string)
+	addr := clt.QkcAddress{Recipient: common.BytesToAddress(address[:20]), FullShardKey: binary.BigEndian.Uint32(address[20:])}
+	context["address"] = addr.Recipient.Hex()
+	context["fromFullShardKey"] = addr.FullShardKeyToHex()
+	getBalance(&addr)
+	_, qkcToAddr, err := clt.NewAddress(0)
 	if err != nil {
-		fmt.Println(err.Error())
-	} else {
-		fmt.Printf("count: %d", count)
-	}*/
-	txid := clt.TransactionId{
-		Hash:    common.HexToHash("0x177db99042f1979b1dade2162d5648d0d2e13c46cb62613448403c87b5254acb"),
-		ShardId: fullShardKey,
+		fmt.Println("NewAddress error: ", err.Error())
 	}
-	result, err := client.GetTransactionReceipt(&txid)
+
+	context["from"] = addr.Recipient.Hex()
+	context["to"] = qkcToAddr.Recipient.Hex()
+	context["amount"] = "0"
+	context["price"] = "100000000000"
+	context["toFullShardKey"] = qkcToAddr.FullShardKeyToHex()
+	context["privateKey"] = common.Bytes2Hex(prvkey.D.Bytes())
+
+	tx, txid, err := sent(context)
 	if err != nil {
-		fmt.Println("getTransactionReceipt error: ", err.Error())
+		fmt.Printf("sent transaction err: %s\r\n", err.Error())
 	}
-	fmt.Println(result.Result)
-	/*	address, _ := hexutil.Decode("0x33f99d65322731353c948808b2e9208d2b22f5520000888d")
-		prvkey, _ := crypto.ToECDSA(common.FromHex("0x8d298c57e269a379c4956583f095b2557c8f07226410e02ae852bc4563864790"))
 
-		context := make(map[string]string)
-		// addr := account.NewAddress(common.BytesToAddress(address[:20]), binary.BigEndian.Uint32(address[20:]))
-		addr := clt.QkcAddress{Recipient: common.BytesToAddress(address[:20]), FullShardKey: binary.BigEndian.Uint32(address[20:])}
-		context["address"] = addr.Recipient.Hex()
-		context["fromFullShardKey"] = addr.FullShardKeyToHex()
-		getBalance(&addr)
-		_, qkcToAddr, err := clt.NewAddress(0)
-		if err != nil {
-			fmt.Println("NewAddress error: ", err.Error())
-		}
+	encode, _ := rlp.EncodeToBytes(tx)
+	fmt.Printf("tx encode: %s\n", common.Bytes2Hex(encode))
 
-		context["from"] = addr.Recipient.Hex()
-		context["to"] = qkcToAddr.Recipient.Hex()
-		context["amount"] = "0"
-		context["price"] = "100000000000"
-		context["toFullShardKey"] = qkcToAddr.FullShardKeyToHex()
-		context["privateKey"] = common.Bytes2Hex(prvkey.D.Bytes())
+	decodeTx := new(clt.EvmTransaction)
+	rlp.DecodeBytes(encode, decodeTx)
+	fmt.Printf("tx decode: %v\n", decodeTx)
 
-		txid := sent(context)
-		context["txid"] = txid
-		getTransaction(context)
-		getReceipt(context)*/
+	context["txid"] = txid
+	getTransaction(context)
+	time.Sleep(15 * time.Second)
+	getReceipt(context)
+
 }
 
 // 获取余额
@@ -137,7 +137,7 @@ func getTransaction(ctx map[string]string) {
 	fmt.Println(result.Result)
 }
 
-func sent(ctx map[string]string) string {
+func sent(ctx map[string]string) (*clt.EvmTransaction, string, error) {
 	from := common.HexToAddress(ctx["from"])
 	to := common.HexToAddress(ctx["to"])
 	amount, _ := new(big.Int).SetString(ctx["amount"], 10)
@@ -153,17 +153,28 @@ func sent(ctx map[string]string) string {
 		toFullShardKey = uint32(new(big.Int).SetBytes(common.FromHex(ctx["toFullShardKey"])).Uint64())
 	}
 	nonce, err := client.GetNonce(&clt.QkcAddress{Recipient: from, FullShardKey: fromFullShardKey})
-	tx := client.CreateTransaction(110001, nonce, fromFullShardKey, &clt.QkcAddress{Recipient: to, FullShardKey: toFullShardKey},
-		amount, uint64(30000), gasPrice, 35760, []byte{})
+	if err != nil {
+		return nil, "", err
+	}
+	networkid, err := client.NetworkID()
+	if err != nil {
+		return nil, "", err
+	}
+	tx := client.CreateTransaction(networkid, nonce, fromFullShardKey, &clt.QkcAddress{Recipient: to, FullShardKey: toFullShardKey},
+		amount, uint64(30000), gasPrice, clt.TokenIDEncode("QKC"), []byte{})
+	// tx, err := client.CreateTransaction(&clt.QkcAddress{Recipient: from, FullShardKey: fromFullShardKey}, &clt.QkcAddress{Recipient: to, FullShardKey: toFullShardKey}, amount, uint64(30000), gasPrice)
+	if err != nil {
+		return nil, "", err
+	}
 	tx, err = clt.SignTx(tx, prvkey)
 	if err != nil {
-		fmt.Println(err.Error())
+		return nil, "", err
 	}
 	txid, err := client.SendTransaction(tx)
 	if err != nil {
-		fmt.Println("SendTransaction error: ", err.Error())
+		return nil, "", err
 	}
 
 	fmt.Println(common.Bytes2Hex(txid))
-	return common.Bytes2Hex(txid)
+	return tx, common.Bytes2Hex(txid), nil
 }

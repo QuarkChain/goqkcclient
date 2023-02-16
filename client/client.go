@@ -14,12 +14,12 @@ import (
 )
 
 type Client struct {
-	client *jsonrpc.RPCClient
+	client jsonrpc.RPCClient
 }
 
 // NewClient creates a client that uses the given RPC client.
 func NewClient(host string) *Client {
-	client := jsonrpc.NewRPCClient(host)
+	client := jsonrpc.NewClient(host)
 	return &Client{client: client}
 }
 
@@ -120,23 +120,6 @@ func (c *Client) GetRootBlockByHeight(number *big.Int) (result *jsonrpc.RPCRespo
 	return resp, nil
 }
 
-func (c *Client) GetTransactionConfirmedByNumberRootBlocks(txid *TransactionId) (uint64, error) {
-	fmt.Println(txid.Hex())
-	resp, err := c.client.Call("getTransactionConfirmedByNumberRootBlocks", txid.Hex())
-	if err != nil {
-		return 0, err
-	}
-	if resp.Error != nil {
-		return 0, resp.Error
-	}
-	countStr, ok := resp.Result.(string)
-	if !ok {
-		return 0, errors.New("getTransactionConfirmedByNumberRootBlocks fail")
-	}
-	count, err := hexutil.DecodeUint64(countStr)
-	return count, err
-}
-
 func (c *Client) GetTransactionById(txid *TransactionId) (result *jsonrpc.RPCResponse, err error) {
 	resp, err := c.client.Call("getTransactionById", []string{txid.Hex()})
 	if err != nil {
@@ -198,7 +181,7 @@ func (c *Client) SendTransaction(tx *EvmTransaction) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	resp, err := c.client.Call("sendRawTransaction", common.Bytes2Hex(data))
+	resp, err := c.client.Call("sendRawTransaction", common.ToHex(data))
 	if err != nil {
 		return nil, err
 	}
@@ -246,9 +229,9 @@ func (c *Client) GetLog(fullShardId uint32, query ethereum.FilterQuery) (*jsonrp
 	if err != nil {
 		return nil, err
 	}
-	//fmt.Println("ERRRR",arg,hexutil.EncodeUint64(uint64(fullShardId)))
+	// fmt.Println("ERRRR",arg,hexutil.EncodeUint64(uint64(fullShardId)))
 	result, err := c.client.Call("eth_getLogs", arg, hexutil.EncodeUint64(uint64(fullShardId)))
-	//fmt.Println("err",result)
+	// fmt.Println("err",result)
 	return result, err
 }
 
@@ -317,8 +300,7 @@ func (c *Client) NetworkID() (uint32, error) {
 	return uint32(networkId), nil
 }
 
-func (c *Client) CreateTransaction(networkID uint32, nonce uint64, fromFullShardKey uint32, qkcToAddr *QkcAddress,
-	amount *big.Int, gasLimit uint64, gasPrice *big.Int, tokenID uint64, data []byte) (tx *EvmTransaction) {
+func (c *Client) CreateTransaction(networkID uint32, nonce uint64, fromFullShardKey uint32, qkcToAddr *QkcAddress, amount *big.Int, gasLimit uint64, gasPrice *big.Int, tokenID uint64, data []byte) (tx *EvmTransaction) {
 	to := new(common.Address)
 	if qkcToAddr == nil {
 		to = nil
